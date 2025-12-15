@@ -2,7 +2,7 @@ Dim WshShell, InstallDir, RegKey
 Set WshShell = CreateObject("WScript.Shell")
 
 ' Leer la ruta de instalación desde el registro
-RegKey = "HKCU\Software\MiAplicacion\InstallDir"
+RegKey = "HKCU\Software\PuntoVenta\InstallDir"
 InstallDir = WshShell.RegRead(RegKey)
 
 ' Construir la ruta completa al archivo BAT

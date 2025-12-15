@@ -150,7 +150,8 @@ include "includes/header.php";
         </thead>
         <tbody>
             <?php
-            $query = $conexion->query("SELECT * FROM usuario");
+            // Excluir el usuario admin (id = 1) de la lista para protegerlo
+            $query = $conexion->query("SELECT * FROM usuario WHERE idusuario != 1");
             $result = $query->fetchAll(PDO::FETCH_ASSOC);
             if ($result) {
                 foreach ($result as $data) { ?>
@@ -160,7 +161,9 @@ include "includes/header.php";
                         <td><?php echo $data['correo']; ?></td>
                         <td><?php echo $data['usuario']; ?></td>
                         <td>
-                            <a href="rol.php?id=<?php echo $data['idusuario']; ?>" class="btn btn-warning"><i class='fas fa-key'></i></a>
+                            <?php if ($data['idusuario'] != 1): ?>
+                                <a href="rol.php?id=<?php echo $data['idusuario']; ?>" class="btn btn-warning"><i class='fas fa-key'></i></a>
+                            <?php endif; ?>
                             <?php if (puedeAccion('usuarios', 'actualizar')): ?>
                             <a href="#" onclick="editarUsuario(<?php echo $data['idusuario']; ?>)" class="btn btn-success"><i class='fas fa-edit'></i></a>
                             <?php endif; ?>

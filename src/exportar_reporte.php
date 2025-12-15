@@ -2,6 +2,20 @@
 session_start();
 require_once "../conexion.php";
 
+// Verificar permisos de reportes
+$id_user = $_SESSION['idUser'];
+$permiso = "reportes";
+
+$sql = $conexion->prepare("SELECT p.*, d.* FROM permisos p INNER JOIN detalle_permisos d ON p.id = d.id_permiso WHERE d.id_usuario = :id_user AND p.nombre = :permiso AND d.puede_leer = 1");
+$sql->bindParam(':id_user', $id_user, PDO::PARAM_INT);
+$sql->bindParam(':permiso', $permiso, PDO::PARAM_STR);
+$sql->execute();
+$existe = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+if (empty($existe) && $id_user != 1) {
+    die('No tienes permisos para generar reportes');
+}
+
 // Función para formatear números al estilo argentino
 function formatearNumeroAR($numero) {
     return number_format($numero, 2, ',', '.');
@@ -85,50 +99,76 @@ $promedio_venta = $total_ventas > 0 ? $total_facturado / $total_ventas : 0;
 
 if ($tipo == 'excel') {
     // ============================================
-    // EXPORTAR A EXCEL (CSV)
+    // EXPORTAR A EXCEL (HTML formato Excel)
     // ============================================
     
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=reporte_ventas_' . date('Y-m-d_His') . '.csv');
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename=reporte_ventas_' . date('Y-m-d_His') . '.xls');
     
-    $output = fopen('php://output', 'w');
+    $desde = $_GET['fecha_inicio'];
+    $hasta = $_GET['fecha_fin'];
     
-    // BOM para UTF-8
-    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+    echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>';
+    echo '<body>';
     
-    // Encabezado del reporte
-    fputcsv($output, ['REPORTE DE VENTAS']);
-    fputcsv($output, ['Período', $_GET['fecha_inicio'] . ' al ' . $_GET['fecha_fin']]);
-    fputcsv($output, []);
+    // Título
+    echo '<table border="0" cellpadding="5" cellspacing="0">';
+    echo '<tr><td colspan="8" style="background-color: #4CAF50; color: white; font-size: 18px; font-weight: bold; text-align: center;">REPORTE DE VENTAS</td></tr>';
+    echo '<tr><td colspan="8" style="text-align: center; font-size: 12px;">Período: ' . $desde . ' al ' . $hasta . '</td></tr>';
+    echo '<tr><td colspan="8">&nbsp;</td></tr>';
+    echo '</table>';
     
-    // Resumen
-    fputcsv($output, ['RESUMEN']);
-    fputcsv($output, ['Total de Ventas', $total_ventas]);
-    fputcsv($output, ['Total Facturado', formatearMonedaAR($total_facturado)]);
-    fputcsv($output, ['Productos Vendidos', $cantidad_productos]);
-    fputcsv($output, ['Promedio por Venta', formatearMonedaAR($promedio_venta)]);
-    fputcsv($output, []);
+    // Resumen con formato
+    echo '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">';
+    echo '<tr><td colspan="2" style="background-color: #2196F3; color: white; font-weight: bold; text-align: center;">RESUMEN</td></tr>';
+    echo '<tr><td style="background-color: #E3F2FD; font-weight: bold; width: 200px;">Total de Ventas:</td><td style="text-align: right;">' . $total_ventas . '</td></tr>';
+    echo '<tr><td style="background-color: #E3F2FD; font-weight: bold;">Total Facturado:</td><td style="text-align: right; font-weight: bold; color: #1976D2;">' . formatearMonedaAR($total_facturado) . '</td></tr>';
+    echo '<tr><td style="background-color: #E3F2FD; font-weight: bold;">Productos Vendidos:</td><td style="text-align: right;">' . $cantidad_productos . '</td></tr>';
+    echo '<tr><td style="background-color: #E3F2FD; font-weight: bold;">Promedio por Venta:</td><td style="text-align: right;">' . formatearMonedaAR($promedio_venta) . '</td></tr>';
+    echo '</table>';
     
-    // Encabezados de tabla
-    fputcsv($output, ['ID Venta', 'Fecha', 'Hora', 'Usuario', /* 'Cliente', */ 'Productos', 'Método Pago', 'Total', 'Turno']);
+    echo '<br><br>';
     
-    // Datos
+    // Tabla de ventas con formato
+    echo '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">';
+    echo '<thead>';
+    echo '<tr style="background-color: #FF9800; color: white; font-weight: bold;">';
+    echo '<th style="width: 50px;">ID</th>';
+    echo '<th style="width: 100px;">Fecha</th>';
+    echo '<th style="width: 80px;">Hora</th>';
+    echo '<th style="width: 120px;">Usuario</th>';
+    echo '<th style="width: 300px;">Productos</th>';
+    echo '<th style="width: 120px;">Método Pago</th>';
+    echo '<th style="width: 100px;">Total</th>';
+    echo '<th style="width: 80px;">Turno</th>';
+    echo '</tr>';
+    echo '</thead>';
+    echo '<tbody>';
+    
+    $row_color = true;
     foreach ($ventas as $venta) {
         $datetime = new DateTime($venta['fecha']);
-        fputcsv($output, [
-            $venta['id'],
-            $datetime->format('Y-m-d'),
-            $datetime->format('H:i:s'),
-            $venta['usuario_nombre'] ?: 'Desconocido',
-            // $venta['cliente_nombre'] ?: 'General',
-            $venta['productos'] ?: 'Sin detalles',
-            $venta['metodo_pago'] ?: 'efectivo',
-            formatearMonedaAR($venta['total']),
-            $venta['turno'] ?: '-'
-        ]);
+        $bg_color = $row_color ? '#FFF3E0' : '#FFFFFF';
+        
+        echo '<tr style="background-color: ' . $bg_color . ';">';
+        echo '<td style="text-align: center;">' . $venta['id'] . '</td>';
+        echo '<td style="text-align: center;">' . $datetime->format('Y-m-d') . '</td>';
+        echo '<td style="text-align: center;">' . $datetime->format('H:i:s') . '</td>';
+        echo '<td>' . ($venta['usuario_nombre'] ?: 'Desconocido') . '</td>';
+        echo '<td>' . ($venta['productos'] ?: 'Sin detalles') . '</td>';
+        echo '<td style="text-align: center;">' . ($venta['metodo_pago'] ?: 'efectivo') . '</td>';
+        echo '<td style="text-align: right; font-weight: bold;">' . formatearMonedaAR($venta['total']) . '</td>';
+        echo '<td style="text-align: center;">' . ($venta['turno'] ?: '-') . '</td>';
+        echo '</tr>';
+        
+        $row_color = !$row_color;
     }
     
-    fclose($output);
+    echo '</tbody>';
+    echo '</table>';
+    echo '</body></html>';
+
     exit();
     
 } else if ($tipo == 'pdf') {
@@ -136,28 +176,18 @@ if ($tipo == 'excel') {
     // EXPORTAR A PDF
     // ============================================
     
-    require_once('tcpdf/tcpdf.php');
-    
-    $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-    
-    // Información del documento
-    $pdf->SetCreator('Punto de Venta');
-    $pdf->SetAuthor('Sistema POS');
-    $pdf->SetTitle('Reporte de Ventas');
-    
-    // Configuración
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
-    $pdf->SetMargins(15, 15, 15);
-    $pdf->SetAutoPageBreak(TRUE, 15);
-    
+    require_once('pdf/fpdf/fpdf.php');
+        $desde = $_GET['fecha_inicio'];
+    $hasta = $_GET['fecha_fin'];
+        $pdf = new FPDF('P', 'mm', 'A4');
     $pdf->AddPage();
+    $pdf->SetMargins(15, 15, 15);
     
     // Título
-    $pdf->SetFont('helvetica', 'B', 16);
+    $pdf->SetFont('Arial', 'B', 16);
     $pdf->Cell(0, 10, 'REPORTE DE VENTAS', 0, 1, 'C');
     
-    $pdf->SetFont('helvetica', '', 10);
+    $pdf->SetFont('Arial', '', 10);
     $pdf->Cell(0, 5, 'Período: ' . $_GET['fecha_inicio'] . ' al ' . $_GET['fecha_fin'], 0, 1, 'C');
     $pdf->Ln(5);
     
@@ -166,6 +196,16 @@ if ($tipo == 'excel') {
     $pdf->Cell(0, 7, 'RESUMEN', 0, 1, 'L');
     
     $pdf->SetFont('helvetica', '', 10);
+    $pdf->SetFillColor(240, 240, 240);
+    
+    $pdf->Cell(0, 6, mb_convert_encoding('Período: ' . $desde . ' al ' . $hasta, 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+    $pdf->Ln(5);
+    
+    // Resumen de Estadísticas
+    $pdf->SetFont('Arial', 'B', 12);
+    $pdf->Cell(0, 7, mb_convert_encoding('ESTADÍSTICAS', 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
+    
+    $pdf->SetFont('Arial', '', 10);
     $pdf->SetFillColor(240, 240, 240);
     
     $pdf->Cell(90, 6, 'Total de Ventas:', 1, 0, 'L', true);
@@ -183,36 +223,34 @@ if ($tipo == 'excel') {
     $pdf->Ln(5);
     
     // Tabla de ventas
-    $pdf->SetFont('helvetica', 'B', 12);
+    $pdf->SetFont('Arial', 'B', 12);
     $pdf->Cell(0, 7, 'DETALLE DE VENTAS', 0, 1, 'L');
     
-    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->SetFont('Arial', 'B', 8);
     $pdf->SetFillColor(200, 200, 200);
     
     $pdf->Cell(15, 6, 'ID', 1, 0, 'C', true);
     $pdf->Cell(30, 6, 'Fecha', 1, 0, 'C', true);
     $pdf->Cell(40, 6, 'Usuario', 1, 0, 'C', true);
-    // $pdf->Cell(30, 6, 'Cliente', 1, 0, 'C', true);
-    $pdf->Cell(35, 6, 'Método Pago', 1, 0, 'C', true);
+    $pdf->Cell(35, 6, mb_convert_encoding('Método Pago', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', true);
     $pdf->Cell(30, 6, 'Total', 1, 0, 'C', true);
     $pdf->Cell(30, 6, 'Turno', 1, 1, 'C', true);
     
-    $pdf->SetFont('helvetica', '', 7);
+    $pdf->SetFont('Arial', '', 7);
     
     foreach ($ventas as $venta) {
         $datetime = new DateTime($venta['fecha']);
         
         $pdf->Cell(15, 5, $venta['id'], 1, 0, 'C');
         $pdf->Cell(30, 5, $datetime->format('Y-m-d'), 1, 0, 'C');
-        $pdf->Cell(40, 5, substr($venta['usuario_nombre'] ?: 'Desconocido', 0, 25), 1, 0, 'L');
-        // $pdf->Cell(30, 5, substr($venta['cliente_nombre'] ?: 'General', 0, 20), 1, 0, 'L');
-        $pdf->Cell(35, 5, $venta['metodo_pago'] ?: 'efectivo', 1, 0, 'C');
+        $pdf->Cell(40, 5, mb_convert_encoding(substr($venta['usuario_nombre'] ?: 'Desconocido', 0, 25), 'ISO-8859-1', 'UTF-8'), 1, 0, 'L');
+        $pdf->Cell(35, 5, mb_convert_encoding($venta['metodo_pago'] ?: 'efectivo', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
         $pdf->Cell(30, 5, formatearMonedaAR($venta['total']), 1, 0, 'R');
-        $pdf->Cell(25, 5, $venta['turno'] ?: '-', 1, 1, 'C');
+        $pdf->Cell(30, 5, mb_convert_encoding($venta['turno'] ?: '-', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
     }
     
-    // Salida del PDF
-    $pdf->Output('reporte_ventas_' . date('Y-m-d_His') . '.pdf', 'D');
+    // Salida del PDF - Modo inline para visualizar en el navegador
+    $pdf->Output('I', 'reporte_ventas_' . date('Y-m-d_His') . '.pdf');
     exit();
 }
 ?>

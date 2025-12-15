@@ -1,0 +1,517 @@
+2025-12-15 16:48:19 - POST recibido
+Array
+(
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 16:48:22 - POST recibido
+Array
+(
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 16:48:28 - POST recibido
+Array
+(
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:04:04 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:04:04 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 6
+)
+
+
+2025-12-15 17:04:08 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [eliminar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:04:08 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [eliminar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 5
+    [1] => 6
+)
+
+
+2025-12-15 17:04:12 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+)
+
+
+2025-12-15 17:04:12 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 5
+    [1] => 6
+)
+
+
+2025-12-15 17:04:23 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:04:23 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 6
+)
+
+
+2025-12-15 17:05:21 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:05:21 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 6
+        )
+
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 6
+)
+
+
+2025-12-15 17:06:04 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:06:04 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 5
+            [1] => 6
+        )
+
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 5
+    [1] => 6
+)
+
+
+2025-12-15 17:06:27 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 4
+            [2] => 5
+            [3] => 6
+        )
+
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:06:27 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 4
+            [2] => 5
+            [3] => 6
+        )
+
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 1
+    [1] => 4
+    [2] => 5
+    [3] => 6
+)
+
+
+2025-12-15 17:07:21 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 4
+            [2] => 5
+            [3] => 6
+        )
+
+    [leer_1] => on
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:07:21 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 4
+            [2] => 5
+            [3] => 6
+        )
+
+    [leer_1] => on
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 1
+    [1] => 4
+    [2] => 5
+    [3] => 6
+)
+
+
+2025-12-15 17:07:54 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 4
+            [1] => 5
+            [2] => 6
+        )
+
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+2025-12-15 17:07:54 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 4
+            [1] => 5
+            [2] => 6
+        )
+
+    [leer_4] => on
+    [leer_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 4
+    [1] => 5
+    [2] => 6
+)
+
+
+2025-12-15 17:18:57 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 2
+            [2] => 3
+            [3] => 4
+            [4] => 5
+            [5] => 6
+            [6] => 7
+        )
+
+    [crear_1] => on
+    [leer_1] => on
+    [actualizar_1] => on
+    [eliminar_1] => on
+    [crear_2] => on
+    [leer_2] => on
+    [actualizar_2] => on
+    [eliminar_2] => on
+    [crear_3] => on
+    [leer_3] => on
+    [actualizar_3] => on
+    [eliminar_3] => on
+    [crear_4] => on
+    [leer_4] => on
+    [actualizar_4] => on
+    [eliminar_4] => on
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [eliminar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+    [crear_7] => on
+    [leer_7] => on
+    [actualizar_7] => on
+    [eliminar_7] => on
+)
+
+
+2025-12-15 17:18:57 - POST recibido
+Array
+(
+    [permisos] => Array
+        (
+            [0] => 1
+            [1] => 2
+            [2] => 3
+            [3] => 4
+            [4] => 5
+            [5] => 6
+            [6] => 7
+        )
+
+    [crear_1] => on
+    [leer_1] => on
+    [actualizar_1] => on
+    [eliminar_1] => on
+    [crear_2] => on
+    [leer_2] => on
+    [actualizar_2] => on
+    [eliminar_2] => on
+    [crear_3] => on
+    [leer_3] => on
+    [actualizar_3] => on
+    [eliminar_3] => on
+    [crear_4] => on
+    [leer_4] => on
+    [actualizar_4] => on
+    [eliminar_4] => on
+    [crear_5] => on
+    [leer_5] => on
+    [actualizar_5] => on
+    [eliminar_5] => on
+    [crear_6] => on
+    [leer_6] => on
+    [actualizar_6] => on
+    [eliminar_6] => on
+    [crear_7] => on
+    [leer_7] => on
+    [actualizar_7] => on
+    [eliminar_7] => on
+)
+
+
+Permisos detectados: Array
+(
+    [0] => 1
+    [1] => 2
+    [2] => 3
+    [3] => 4
+    [4] => 5
+    [5] => 6
+    [6] => 7
+)
+
+

@@ -3,6 +3,11 @@ session_start();
 require_once "../conexion.php";
 $id = $_GET['id'];
 
+// Log inicial para verificar si llega el POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents('log_post_debug.txt', date('Y-m-d H:i:s') . " - POST recibido\n" . print_r($_POST, true) . "\n\n", FILE_APPEND);
+}
+
 // Consultar permisos del usuario
 $sqlpermisos = $conexion->prepare("SELECT * FROM permisos");
 $sqlpermisos->execute();
@@ -18,34 +23,44 @@ if (empty($resultUsuario)) {
     header("Location: usuarios.php");
 }
 
-// Cargar permisos actuales con sus acciones
-$datos = array();
-foreach ($consulta as $asignado) {
-    $datos[$asignado['id_permiso']] = [
-        'activo' => true,
-        'puede_crear' => $asignado['puede_crear'] ?? 1,
-        'puede_leer' => $asignado['puede_leer'] ?? 1,
-        'puede_actualizar' => $asignado['puede_actualizar'] ?? 1,
-        'puede_eliminar' => $asignado['puede_eliminar'] ?? 1
-    ];
-}
-
-if (isset($_POST['permisos'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents('log_post_debug.txt', date('Y-m-d H:i:s') . " - POST recibido\n" . print_r($_POST, true) . "\n\n", FILE_APPEND);
+    
     $id_user = $_GET['id'];
-    $permisos = $_POST['permisos'] ?? [];
+    
+    // Detectar permisos marcados desde el array permisos[] o desde las acciones individuales
+    $permisos_array = $_POST['permisos'] ?? [];
+    
+    // Si no hay permisos[] pero hay acciones marcadas, construir el array
+    if (empty($permisos_array)) {
+        $permisos_detectados = [];
+        foreach ($_POST as $key => $value) {
+            if (preg_match('/^(crear|leer|actualizar|eliminar)_(\d+)$/', $key, $matches)) {
+                $permiso_id = $matches[2];
+                if (!in_array($permiso_id, $permisos_detectados)) {
+                    $permisos_detectados[] = $permiso_id;
+                }
+            }
+        }
+        $permisos_array = $permisos_detectados;
+    }
+    
+    file_put_contents('log_post_debug.txt', "Permisos detectados: " . print_r($permisos_array, true) . "\n\n", FILE_APPEND);
     
     // Eliminar permisos anteriores
-    $conexion->prepare("DELETE FROM detalle_permisos WHERE id_usuario = :id_user")->execute([':id_user' => $id_user]);
+    $delete = $conexion->prepare("DELETE FROM detalle_permisos WHERE id_usuario = :id_user");
+    $delete->execute([':id_user' => $id_user]);
 
-    if (!empty($permisos)) {
-        foreach ($permisos as $permiso_id) {
+    if (!empty($permisos_array)) {
+        $errores = 0;
+        foreach ($permisos_array as $permiso_id) {
             $puede_crear = isset($_POST['crear_' . $permiso_id]) ? 1 : 0;
             $puede_leer = isset($_POST['leer_' . $permiso_id]) ? 1 : 0;
             $puede_actualizar = isset($_POST['actualizar_' . $permiso_id]) ? 1 : 0;
             $puede_eliminar = isset($_POST['eliminar_' . $permiso_id]) ? 1 : 0;
             
             $sql = $conexion->prepare("INSERT INTO detalle_permisos(id_usuario, id_permiso, puede_crear, puede_leer, puede_actualizar, puede_eliminar) VALUES (:id_user, :permiso, :crear, :leer, :actualizar, :eliminar)");
-            $sql->execute([
+            $result = $sql->execute([
                 ':id_user' => $id_user,
                 ':permiso' => $permiso_id,
                 ':crear' => $puede_crear,
@@ -53,14 +68,46 @@ if (isset($_POST['permisos'])) {
                 ':actualizar' => $puede_actualizar,
                 ':eliminar' => $puede_eliminar
             ]);
+            
+            if (!$result) {
+                $errores++;
+                file_put_contents('log_post_debug.txt', "Error en permiso $permiso_id\n", FILE_APPEND);
+            }
         }
-        $alert = '<div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <strong>¡Éxito!</strong> Los permisos han sido actualizados correctamente.
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>';
+        
+        if ($errores === 0) {
+            $alert = '<div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>¡Éxito!</strong> Los permisos han sido actualizados correctamente.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>';
+        } else {
+            $alert = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error!</strong> Algunos permisos no se guardaron correctamente.
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>';
+        }
     }
+    
+    // Recargar permisos después de guardar
+    $consulta = $conexion->prepare("SELECT * FROM detalle_permisos WHERE id_usuario = :id");
+    $consulta->bindParam(':id', $id, PDO::PARAM_INT);
+    $consulta->execute();
+}
+
+// Cargar permisos actuales con sus acciones
+$datos = array();
+foreach ($consulta as $asignado) {
+    $datos[$asignado['id_permiso']] = [
+        'activo' => true,
+        'puede_crear' => $asignado['puede_crear'] ?? 0,
+        'puede_leer' => $asignado['puede_leer'] ?? 0,
+        'puede_actualizar' => $asignado['puede_actualizar'] ?? 0,
+        'puede_eliminar' => $asignado['puede_eliminar'] ?? 0
+    ];
 }
 include_once "includes/header.php";
 ?>
@@ -110,6 +157,9 @@ include_once "includes/header.php";
                             </thead>
                             <tbody>
                                 <?php 
+                                // Detectar si el usuario actual es administrador
+                                $es_admin = isset($_SESSION['idUser']) && $_SESSION['idUser'] == 1;
+                                
                                 $sqlpermisos->execute(); // Re-ejecutar para iterar
                                 while ($row = $sqlpermisos->fetch(PDO::FETCH_ASSOC)) { 
                                     $permiso_id = $row['id'];
@@ -128,7 +178,9 @@ include_once "includes/header.php";
                                                    value="<?php echo $permiso_id; ?>" 
                                                    id="permiso_<?php echo $permiso_id; ?>"
                                                    <?php echo $tiene_permiso ? 'checked' : ''; ?>
-                                                   onchange="toggleAcciones(<?php echo $permiso_id; ?>)">
+                                                   <?php if (!$es_admin): ?>
+                                                   onchange="toggleAcciones(<?php echo $permiso_id; ?>)"
+                                                   <?php endif; ?>>
                                             <label class="form-check-label text-uppercase font-weight-bold" for="permiso_<?php echo $permiso_id; ?>">
                                                 <?php echo $row['nombre']; ?>
                                             </label>
@@ -140,7 +192,7 @@ include_once "includes/header.php";
                                                name="crear_<?php echo $permiso_id; ?>" 
                                                id="crear_<?php echo $permiso_id; ?>"
                                                <?php echo ($tiene_permiso && $puede_crear) ? 'checked' : ''; ?>
-                                               <?php echo !$tiene_permiso ? 'disabled' : ''; ?>>
+                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
@@ -148,7 +200,7 @@ include_once "includes/header.php";
                                                name="leer_<?php echo $permiso_id; ?>" 
                                                id="leer_<?php echo $permiso_id; ?>"
                                                <?php echo ($tiene_permiso && $puede_leer) ? 'checked' : ''; ?>
-                                               <?php echo !$tiene_permiso ? 'disabled' : ''; ?>>
+                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
@@ -156,7 +208,7 @@ include_once "includes/header.php";
                                                name="actualizar_<?php echo $permiso_id; ?>" 
                                                id="actualizar_<?php echo $permiso_id; ?>"
                                                <?php echo ($tiene_permiso && $puede_actualizar) ? 'checked' : ''; ?>
-                                               <?php echo !$tiene_permiso ? 'disabled' : ''; ?>>
+                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
@@ -164,14 +216,14 @@ include_once "includes/header.php";
                                                name="eliminar_<?php echo $permiso_id; ?>" 
                                                id="eliminar_<?php echo $permiso_id; ?>"
                                                <?php echo ($tiene_permiso && $puede_eliminar) ? 'checked' : ''; ?>
-                                               <?php echo !$tiene_permiso ? 'disabled' : ''; ?>>
+                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <button type="button" 
                                                 class="btn btn-sm btn-outline-primary" 
                                                 onclick="marcarTodos(<?php echo $permiso_id; ?>)"
                                                 id="btnTodos_<?php echo $permiso_id; ?>"
-                                                <?php echo !$tiene_permiso ? 'disabled' : ''; ?>>
+                                                <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </td>
@@ -196,6 +248,7 @@ include_once "includes/header.php";
 </div>
 
 <script>
+// Cuando se marque/desmarque el checkbox principal del módulo
 function toggleAcciones(permisoId) {
     const checkbox = document.getElementById('permiso_' + permisoId);
     const isChecked = checkbox.checked;
@@ -214,7 +267,11 @@ function toggleAcciones(permisoId) {
     btnTodos.disabled = !isChecked;
 }
 
+// Marcar todos los permisos de un módulo
 function marcarTodos(permisoId) {
+    const moduloCheck = document.getElementById('permiso_' + permisoId);
+    moduloCheck.checked = true;
+    
     ['crear', 'leer', 'actualizar', 'eliminar'].forEach(accion => {
         const accionCheck = document.getElementById(accion + '_' + permisoId);
         if (!accionCheck.disabled) {
@@ -222,5 +279,37 @@ function marcarTodos(permisoId) {
         }
     });
 }
+
+// Cuando se marca una acción individual, marcar automáticamente el módulo principal
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar listener a todos los checkboxes de acciones
+    document.querySelectorAll('.accion-check').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Extraer el ID del permiso del name del checkbox (ej: "crear_6" -> "6")
+            const match = this.name.match(/^(crear|leer|actualizar|eliminar)_(\d+)$/);
+            if (match) {
+                const permisoId = match[2];
+                const moduloCheck = document.getElementById('permiso_' + permisoId);
+                
+                // Si se marca cualquier acción, asegurarse de que el módulo esté marcado
+                if (this.checked && moduloCheck) {
+                    moduloCheck.checked = true;
+                }
+                
+                // Si se desmarca y ninguna otra acción está marcada, desmarcar el módulo
+                if (!this.checked && moduloCheck) {
+                    const algunaMarcada = ['crear', 'leer', 'actualizar', 'eliminar'].some(accion => {
+                        const accionCheck = document.getElementById(accion + '_' + permisoId);
+                        return accionCheck && accionCheck.checked;
+                    });
+                    
+                    if (!algunaMarcada) {
+                        moduloCheck.checked = false;
+                    }
+                }
+            }
+        });
+    });
+});
 </script>
 <?php include_once "includes/footer.php"; ?>

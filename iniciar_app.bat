@@ -1,7 +1,7 @@
 @echo off
 
 REM Leer la ruta de instalación desde el registro
-for /f "usebackq tokens=2*" %%A in (`reg query "HKCU\Software\MiAplicacion" /v InstallDir`) do set InstallDir=%%B
+for /f "usebackq tokens=2*" %%A in (`reg query "HKCU\Software\PuntoVenta" /v InstallDir`) do set InstallDir=%%B
 
 cd "%InstallDir%"
     

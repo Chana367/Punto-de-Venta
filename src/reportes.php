@@ -4,9 +4,8 @@ require_once "../conexion.php";
 $id_user = $_SESSION['idUser'];
 $permiso = "reportes";
 
-// Verificar permisos (solo para usuarios autorizados)
-// Si no existe el permiso "reportes", permitir acceso a admin
-$sql = $conexion->prepare("SELECT p.*, d.* FROM permisos p INNER JOIN detalle_permisos d ON p.id = d.id_permiso WHERE d.id_usuario = :id_user AND p.nombre = :permiso");
+// Verificar permisos (debe tener permiso de leer en reportes)
+$sql = $conexion->prepare("SELECT p.*, d.* FROM permisos p INNER JOIN detalle_permisos d ON p.id = d.id_permiso WHERE d.id_usuario = :id_user AND p.nombre = :permiso AND d.puede_leer = 1");
 $sql->bindParam(':id_user', $id_user, PDO::PARAM_INT);
 $sql->bindParam(':permiso', $permiso, PDO::PARAM_STR);
 $sql->execute();

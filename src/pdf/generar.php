@@ -23,8 +23,17 @@ $clientes->bindParam(':idcliente', $idcliente, PDO::PARAM_INT);
 $clientes->execute();
 $datosC = $clientes->fetch(PDO::FETCH_ASSOC);
 
-// Consulta de ventas
-$ventas = $conexion->prepare("SELECT d.*, p.codproducto, p.descripcion FROM detalle_venta d INNER JOIN producto p ON d.id_producto = p.codproducto WHERE d.id_venta = :id");
+// Valores por defecto si no se encuentra el cliente
+if (!$datosC) {
+    $datosC = [
+        'nombre' => 'Cliente General',
+        'telefono' => 'N/A',
+        'direccion' => 'N/A'
+    ];
+}
+
+// Consulta de ventas con información del usuario
+$ventas = $conexion->prepare("SELECT d.*, p.codproducto, p.descripcion, v.id_usuario, u.nombre as usuario_nombre FROM detalle_venta d INNER JOIN producto p ON d.id_producto = p.codproducto INNER JOIN ventas v ON d.id_venta = v.id LEFT JOIN usuario u ON v.id_usuario = u.idusuario WHERE d.id_venta = :id");
 $ventas->bindParam(':id', $id, PDO::PARAM_INT);
 $ventas->execute();
 
@@ -70,6 +79,20 @@ $pdf->SetFont('Arial', '', 12);
 $pdf->Cell(0, 10, mb_convert_encoding('Nombre: ' . $datosC['nombre'], 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
 $pdf->Cell(0, 10, mb_convert_encoding('Teléfono: ' . $datosC['telefono'], 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
 $pdf->Cell(0, 10, mb_convert_encoding('Dirección: ' . $datosC['direccion'], 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
+
+// Obtener información del usuario (de la primera fila del detalle)
+$usuario_venta = null;
+$ventas_data = $ventas->fetchAll(PDO::FETCH_ASSOC);
+if (!empty($ventas_data)) {
+    $usuario_venta = $ventas_data[0]['usuario_nombre'] ?? 'Desconocido';
+}
+
+// Mostrar el usuario que generó la venta
+if ($usuario_venta) {
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(0, 8, mb_convert_encoding('Vendedor: ' . $usuario_venta, 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
+}
+
 $pdf->Ln(10);
 
 // Detalle de Producto
@@ -82,7 +105,7 @@ $pdf->Cell(35, 10, 'Precio Unit', 1, 0, 'L');
 $pdf->Cell(35, 10, 'Sub Total', 1, 1, 'L');
 $total = 0.00;
 $desc = 0.00;
-while ($row = $ventas->fetch(PDO::FETCH_ASSOC)) {
+foreach ($ventas_data as $row) {
     $pdf->Cell(90, 10, mb_convert_encoding($row['descripcion'], 'ISO-8859-1', 'UTF-8'), 1, 0, 'L');
     $pdf->Cell(30, 10, $row['cantidad'], 1, 0, 'L');
     $pdf->Cell(35, 10, '$' . number_format($row['precio'], 2, ',', '.'), 1, 0, 'L');
@@ -107,5 +130,5 @@ $pdf->Cell(0, 10, 'Total a Pagar', 0, 1, 'R');
 $pdf->SetFont('Arial', '', 12);
 $pdf->Cell(0, 10, '$' . number_format($total, 2, '.', ','), 0, 1, 'R');
 
-$pdf->Output("ventas.pdf", "I");
+$pdf->Output("I", "ventas.pdf");
 ?>

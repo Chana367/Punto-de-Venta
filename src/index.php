@@ -16,8 +16,8 @@ $stmt = $conexion->query("SELECT COUNT(*) AS count FROM usuario");
 $total['usuarios'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
 // Total de clientes
-$stmt = $conexion->query("SELECT COUNT(*) AS count FROM cliente");
-$total['clientes'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+// $stmt = $conexion->query("SELECT COUNT(*) AS count FROM cliente");
+// $total['clientes'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
 // Total de productos
 $stmt = $conexion->query("SELECT COUNT(*) AS count FROM producto");
@@ -47,21 +47,21 @@ include_once "includes/header.php";
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 col-sm-6">
-        <div class="card card-stats">
-            <div class="card-header card-header-success card-header-icon">
-                <div class="card-icon">
-                    <i class="fas fa-users fa-2x"></i>
+        <!-- <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="card card-stats">
+                <div class="card-header card-header-success card-header-icon">
+                    <div class="card-icon">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <a href="clientes.php" class="card-category text-success font-weight-bold">
+                        Clientes
+                    </a>
+                    <h3 class="card-title"><?php //echo $total['clientes']; ?></h3>
                 </div>
-                <a href="clientes.php" class="card-category text-success font-weight-bold">
-                    Clientes
-                </a>
-                <h3 class="card-title"><?php echo $total['clientes']; ?></h3>
+                <div class="card-footer bg-secondary text-white">
+                </div>
             </div>
-            <div class="card-footer bg-secondary text-white">
-            </div>
-        </div>
-    </div>
+        </div> -->
     <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="card card-stats">
             <div class="card-header card-header-danger card-header-icon">

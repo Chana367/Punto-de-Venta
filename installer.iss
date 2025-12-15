@@ -1,14 +1,15 @@
 [Setup]
 AppName=Punto de Venta
 AppVersion=1.0
-DefaultDirName={pf}\punto_de_venta
+DefaultDirName={commonpf}\punto_de_venta
 DefaultGroupName=Punto de Venta
 OutputDir=.\Output
 OutputBaseFilename=puntodeventainstalador
 Compression=lzma2
 SolidCompression=yes
 Encryption=yes
-Password=MatuSosa3729
+Password=puntoVenta2
+PrivilegesRequired=admin
 
 [Files]
 ; Incluir archivos específicos del punto de venta solamente
@@ -31,7 +32,7 @@ Name: "{group}\Punto de Venta"; Filename: "{app}\ejecutar_app.vbs"; WorkingDir: 
 Name: "{commondesktop}\Punto de Venta"; Filename: "{app}\ejecutar_app.vbs"; WorkingDir: "{app}"; IconFilename: "{app}\printer_4469875.ico"
 
 [Registry]
-Root: HKCU; Subkey: "Software\MiAplicacion"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "Software\PuntoVenta"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
 
 [Run]
 Filename: "{app}\ejecutar_app.vbs"; Description: "{cm:LaunchProgram,Punto de Venta}"; Flags: shellexec postinstall skipifsilent

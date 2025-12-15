@@ -48,8 +48,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return turno;
     }
     
-    // Detectar turno al cargar la página si existe el campo
-    if ($('#turno').length > 0) {
+    // Detectar turno al cargar la página si existe el campo turno
+    // PERO NO en la página de reportes (donde queremos "Todos los turnos" por defecto)
+    if ($('#turno').length > 0 && !$('#turno').closest('form').find('button[onclick*="generarReporte"]').length) {
         detectarTurno();
         
         // Actualizar cada 60 segundos por si cambia el turno
