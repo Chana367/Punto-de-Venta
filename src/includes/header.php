@@ -64,7 +64,7 @@ function puedeAccion($permiso, $accion) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
-    <link rel="icon" href="../assets/img/<?php echo htmlspecialchars($logo_sistema); ?>" type="image/png">
+    <link rel="icon" href="get_image.php?file=<?php echo urlencode($logo_sistema); ?>" type="image/png">
     <meta name="author" content="" />
     <title>Panel de Administración</title>
     <link href="../assets/css/material-dashboard.css" rel="stylesheet" />
@@ -75,7 +75,7 @@ function puedeAccion($permiso, $accion) {
 
 <body>
     <div class="wrapper ">
-        <div class="sidebar" data-color="purple" data-background-color="black" data-image="../assets/img/<?php echo htmlspecialchars($background_sistema); ?>">
+        <div class="sidebar" data-color="purple" data-background-color="black" data-image="get_image.php?file=<?php echo urlencode($background_sistema); ?>">
             <div class="logo"><a href="./" class="simple-text logo-normal">
                     Punto de Venta
                 </a></div>

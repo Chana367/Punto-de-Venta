@@ -2,10 +2,19 @@
 session_start();
 require_once "../conexion.php";
 $id = $_GET['id'];
+$id_user_actual = $_SESSION['idUser'];
 
-// Log inicial para verificar si llega el POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    file_put_contents('log_post_debug.txt', date('Y-m-d H:i:s') . " - POST recibido\n" . print_r($_POST, true) . "\n\n", FILE_APPEND);
+// Validaciones de seguridad
+// 1. No permitir editar permisos del admin principal (ID=1)
+// 2. No permitir que un usuario edite sus propios permisos
+if ($id == 1) {
+    header("Location: usuarios.php");
+    exit;
+}
+
+if ($id == $id_user_actual) {
+    header("Location: usuarios.php");
+    exit;
 }
 
 // Consultar permisos del usuario
@@ -24,8 +33,6 @@ if (empty($resultUsuario)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    file_put_contents('log_post_debug.txt', date('Y-m-d H:i:s') . " - POST recibido\n" . print_r($_POST, true) . "\n\n", FILE_APPEND);
-    
     $id_user = $_GET['id'];
     
     // Detectar permisos marcados desde el array permisos[] o desde las acciones individuales
@@ -44,8 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $permisos_array = $permisos_detectados;
     }
-    
-    file_put_contents('log_post_debug.txt', "Permisos detectados: " . print_r($permisos_array, true) . "\n\n", FILE_APPEND);
     
     // Eliminar permisos anteriores
     $delete = $conexion->prepare("DELETE FROM detalle_permisos WHERE id_usuario = :id_user");
@@ -191,39 +196,34 @@ include_once "includes/header.php";
                                                class="accion-check" 
                                                name="crear_<?php echo $permiso_id; ?>" 
                                                id="crear_<?php echo $permiso_id; ?>"
-                                               <?php echo ($tiene_permiso && $puede_crear) ? 'checked' : ''; ?>
-                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
+                                               <?php echo ($tiene_permiso && $puede_crear) ? 'checked' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
                                                class="accion-check" 
                                                name="leer_<?php echo $permiso_id; ?>" 
                                                id="leer_<?php echo $permiso_id; ?>"
-                                               <?php echo ($tiene_permiso && $puede_leer) ? 'checked' : ''; ?>
-                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
+                                               <?php echo ($tiene_permiso && $puede_leer) ? 'checked' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
                                                class="accion-check" 
                                                name="actualizar_<?php echo $permiso_id; ?>" 
                                                id="actualizar_<?php echo $permiso_id; ?>"
-                                               <?php echo ($tiene_permiso && $puede_actualizar) ? 'checked' : ''; ?>
-                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
+                                               <?php echo ($tiene_permiso && $puede_actualizar) ? 'checked' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <input type="checkbox" 
                                                class="accion-check" 
                                                name="eliminar_<?php echo $permiso_id; ?>" 
                                                id="eliminar_<?php echo $permiso_id; ?>"
-                                               <?php echo ($tiene_permiso && $puede_eliminar) ? 'checked' : ''; ?>
-                                               <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
+                                               <?php echo ($tiene_permiso && $puede_eliminar) ? 'checked' : ''; ?>>
                                     </td>
                                     <td class="text-center">
                                         <button type="button" 
                                                 class="btn btn-sm btn-outline-primary" 
                                                 onclick="marcarTodos(<?php echo $permiso_id; ?>)"
-                                                id="btnTodos_<?php echo $permiso_id; ?>"
-                                                <?php echo (!$es_admin && !$tiene_permiso) ? 'disabled' : ''; ?>>
+                                                id="btnTodos_<?php echo $permiso_id; ?>">
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </td>

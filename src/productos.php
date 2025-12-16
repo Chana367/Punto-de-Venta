@@ -24,9 +24,8 @@ if (!empty($_POST)) {
     $precio = $_POST['precio'];
     $cantidad = $_POST['cantidad'];
     $stock_minimo = isset($_POST['stock_minimo']) ? $_POST['stock_minimo'] : 5;
-    $embalaje = $_POST['embalaje']; // Añadido el campo de embalaje
 
-    if (empty($codigo) || empty($producto) || empty($precio) || $precio < 0 || empty($cantidad) || $cantidad < 0 || empty($embalaje) || empty($stock_minimo) || $stock_minimo < 0) {
+    if (empty($codigo) || empty($producto) || empty($precio) || $precio < 0 || empty($cantidad) || $cantidad < 0 || empty($stock_minimo) || $stock_minimo < 0) {
         $alert = '<div class="alert alert-warning alert-dismissible fade show" role="alert">
                         <strong>Atención:</strong> Todos los campos son obligatorios. El precio, cantidad y stock mínimo deben ser mayores o iguales a cero.
                         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -48,10 +47,9 @@ if (!empty($_POST)) {
                         </button>
                     </div>';
             } else {
-                $query_insert = $conexion->prepare("INSERT INTO producto (codigo, descripcion, embalaje, precio, cantidad, stock_minimo) VALUES (:codigo, :producto, :embalaje, :precio, :cantidad, :stock_minimo)");
+                $query_insert = $conexion->prepare("INSERT INTO producto (codigo, descripcion, precio, cantidad, stock_minimo, activo) VALUES (:codigo, :producto, :precio, :cantidad, :stock_minimo, 1)");
                 $query_insert->bindParam(':codigo', $codigo, PDO::PARAM_STR);
                 $query_insert->bindParam(':producto', $producto, PDO::PARAM_STR);
-                $query_insert->bindParam(':embalaje', $embalaje, PDO::PARAM_STR);
                 $query_insert->bindParam(':precio', $precio, PDO::PARAM_STR);
                 $query_insert->bindParam(':cantidad', $cantidad, PDO::PARAM_INT);
                 $query_insert->bindParam(':stock_minimo', $stock_minimo, PDO::PARAM_INT);
@@ -71,10 +69,9 @@ if (!empty($_POST)) {
                 }
             }
         } else {
-            $query_update = $conexion->prepare("UPDATE producto SET codigo = :codigo, descripcion = :producto, embalaje = :embalaje, precio = :precio, cantidad = :cantidad, stock_minimo = :stock_minimo WHERE codproducto = :id");
+            $query_update = $conexion->prepare("UPDATE producto SET codigo = :codigo, descripcion = :producto, precio = :precio, cantidad = :cantidad, stock_minimo = :stock_minimo WHERE codproducto = :id");
             $query_update->bindParam(':codigo', $codigo, PDO::PARAM_STR);
             $query_update->bindParam(':producto', $producto, PDO::PARAM_STR);
-            $query_update->bindParam(':embalaje', $embalaje, PDO::PARAM_STR);
             $query_update->bindParam(':precio', $precio, PDO::PARAM_STR);
             $query_update->bindParam(':cantidad', $cantidad, PDO::PARAM_INT);
             $query_update->bindParam(':stock_minimo', $stock_minimo, PDO::PARAM_INT);
@@ -148,12 +145,6 @@ include_once "includes/header.php";
                                 <input type="number" placeholder="Stock mínimo" class="form-control" name="stock_minimo" id="stock_minimo" value="5">
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="embalaje" class="text-dark font-weight-bold">Embalaje</label>
-                                <input type="text" placeholder="Ingrese tipo de embalaje" class="form-control" name="embalaje" id="embalaje">
-                            </div>
-                        </div>
                         <div class="col-md-6">
                             <?php if (puedeAccion('productos', 'crear') || puedeAccion('productos', 'actualizar')): ?>
                                 <input type="submit" value="Registrar" class="btn btn-primary" id="btnAccion">
@@ -179,7 +170,28 @@ include_once "includes/header.php";
             </div>
         </div>
 
+        <!-- Pestañas para productos activos/inactivos -->
+        <div class="col-md-12 mt-3 mb-3">
+            <div class="btn-group" role="group">
+                <a href="?tab=activos" class="btn <?php echo !isset($_GET['tab']) || $_GET['tab'] == 'activos' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                    <i class="fas fa-check-circle"></i> PRODUCTOS ACTIVOS
+                </a>
+                <a href="?tab=inactivos" class="btn <?php echo isset($_GET['tab']) && $_GET['tab'] == 'inactivos' ? 'btn-warning' : 'btn-outline-warning'; ?>">
+                    <i class="fas fa-ban"></i> PRODUCTOS DESHABILITADOS
+                </a>
+            </div>
+        </div>
+
         <div class="col-md-12">
+            <?php if (isset($_GET['msg']) && $_GET['msg'] == 'reactivado'): ?>
+                <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                    <i class="fas fa-check-circle"></i> Producto reactivado correctamente.
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            <?php endif; ?>
+
             <div class="table-responsive">
                 <table class="table table-striped table-bordered" id="tbl">
                     <thead class="thead-dark">
@@ -187,7 +199,6 @@ include_once "includes/header.php";
                             <th>#</th>
                             <th>Código</th>
                             <th>Producto</th>
-                            <th>Embalaje</th>
                             <th>Precio</th>
                             <th>Stock</th>
                             <th>Stock Mínimo</th>
@@ -198,8 +209,12 @@ include_once "includes/header.php";
                         <?php
                         include "../conexion.php";
 
-                        // Consulta para obtener todos los productos
-                        $query = $conexion->query("SELECT * FROM producto");
+                        // Determinar qué productos mostrar según la pestaña activa
+                        $tab = isset($_GET['tab']) ? $_GET['tab'] : 'activos';
+                        $activo_value = ($tab == 'inactivos') ? 0 : 1;
+                        
+                        // Consulta para obtener productos según el estado activo
+                        $query = $conexion->query("SELECT * FROM producto WHERE activo = $activo_value");
                         $result = $query->fetchAll(PDO::FETCH_ASSOC);
 
                         if (!empty($result)) {
@@ -217,23 +232,39 @@ include_once "includes/header.php";
                                     <td><?php echo $data['codproducto']; ?></td>
                                     <td><?php echo $data['codigo']; ?></td>
                                     <td><?php echo $data['descripcion']; ?></td>
-                                    <td><?php echo $data['embalaje']; ?></td>
                                     <td><?php echo $data['precio']; ?></td>
                                     <td class="<?php echo $stock_class; ?>"><?php echo $data['cantidad']; ?></td>
                                     <td><?php echo $stock_minimo; ?></td>
                                     <td>
-                                        <?php if (puedeAccion('productos', 'actualizar')): ?>
-                                            <a href="#" onclick="editarProducto(<?php echo $data['codproducto']; ?>)" class="btn btn-primary" title="Editar"><i class='fas fa-edit'></i></a>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (puedeAccion('productos', 'eliminar')): ?>
-                                            <form action="eliminar_producto.php?id=<?php echo $data['codproducto']; ?>" method="post" class="confirmar d-inline">
-                                                <button class="btn btn-danger" type="submit" title="Eliminar"><i class='fas fa-trash-alt'></i></button>
-                                            </form>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!puedeAccion('productos', 'actualizar') && !puedeAccion('productos', 'eliminar') && puedeAccion('productos', 'leer')): ?>
-                                            <span class="badge badge-info">Solo lectura</span>
+                                        <?php if ($tab == 'activos'): ?>
+                                            <!-- Botones para productos activos -->
+                                            <?php if (puedeAccion('productos', 'actualizar')): ?>
+                                                <a href="#" onclick="editarProducto(<?php echo $data['codproducto']; ?>)" class="btn btn-primary" title="Editar"><i class='fas fa-edit'></i></a>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (puedeAccion('productos', 'eliminar')): ?>
+                                                <form action="eliminar_producto.php?id=<?php echo $data['codproducto']; ?>" method="post" class="confirmar d-inline">
+                                                    <button class="btn btn-warning" type="submit" title="Deshabilitar producto"><i class='fas fa-ban'></i></button>
+                                                </form>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!puedeAccion('productos', 'actualizar') && !puedeAccion('productos', 'eliminar') && puedeAccion('productos', 'leer')): ?>
+                                                <span class="badge badge-info">Solo lectura</span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <!-- Botones para productos deshabilitados -->
+                                            <?php if (puedeAccion('productos', 'actualizar') || puedeAccion('productos', 'eliminar')): ?>
+                                                <a href="reactivar_producto.php?id=<?php echo $data['codproducto']; ?>" 
+                                                   class="btn btn-success" 
+                                                   title="Reactivar producto"
+                                                   onclick="return confirm('¿Está seguro de reactivar este producto?');">
+                                                    <i class='fas fa-check-circle'></i> Reactivar
+                                                </a>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (!puedeAccion('productos', 'actualizar') && !puedeAccion('productos', 'eliminar') && puedeAccion('productos', 'leer')): ?>
+                                                <span class="badge badge-secondary">Deshabilitado</span>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -288,7 +319,6 @@ include_once "includes/header.php";
                                 <th>Código</th>
                                 <th>Producto</th>
                                 <th>Precio</th>
-                                <th>Embalaje</th>
                                 <th>Stock</th>
                             </tr>
                         </thead>
@@ -311,14 +341,14 @@ include_once "includes/header.php";
 document.addEventListener('DOMContentLoaded', () => {
     $('#lowStockModal').on('show.bs.modal', function () {
         const tableBody = document.getElementById('lowStockTableBody');
-        tableBody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
         
         fetch('./low_stock.php')
             .then(response => response.json())
             .then(data => {
                 tableBody.innerHTML = '';
                 if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos con bajo stock.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos con bajo stock.</td></tr>';
                 } else {
                     data.forEach((producto, index) => {
                         tableBody.innerHTML += `
@@ -326,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td>${index + 1}</td>
                                 <td>${producto.codigo}</td>
                                 <td>${producto.descripcion}</td>
-                                <td>${producto.embalaje}</td>
                                 <td>${producto.precio}</td>
                                 <td>${producto.cantidad}</td>
                             </tr>
@@ -335,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
             .catch(error => {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-danger">Error: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-danger">Error: ${error.message}</td></tr>`;
             });
     });
 });

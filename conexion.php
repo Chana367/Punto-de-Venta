@@ -1,6 +1,10 @@
 <?php
-// Ruta al archivo de base de datos SQLite
-$dbPath = __DIR__ . '/sistema.db'; 
+// Ruta al archivo de base de datos SQLite en APPDATA
+$appDataDir = getenv('APPDATA') . '\\PuntoVenta';
+if (!is_dir($appDataDir)) {
+    mkdir($appDataDir, 0777, true);
+}
+$dbPath = $appDataDir . '\\sistema.db'; 
 
 try {
     // Crear una nueva conexión a SQLite usando PDO

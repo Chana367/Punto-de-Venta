@@ -19,11 +19,11 @@ if (empty($existe) && $id_user != 1) {
 if (!empty($_GET['id'])) {
     $id = $_GET['id'];
 
-    // Marcar producto como inactivo en lugar de eliminarlo (soft delete)
-    $query_delete = $conexion->prepare("UPDATE producto SET activo = 0 WHERE codproducto = :id");
-    $query_delete->bindParam(':id', $id, PDO::PARAM_INT);
-    $query_delete->execute();
+    // Reactivar producto (marcarlo como activo)
+    $query_reactivar = $conexion->prepare("UPDATE producto SET activo = 1 WHERE codproducto = :id");
+    $query_reactivar->bindParam(':id', $id, PDO::PARAM_INT);
+    $query_reactivar->execute();
 
-    header("Location: productos.php");
+    header("Location: productos.php?tab=inactivos&msg=reactivado");
 }
 ?>

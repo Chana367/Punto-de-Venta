@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     })
     $("#producto").autocomplete({
-        minLength: 3,
+        minLength: 1,
         source: function (request, response) {
             $.ajax({
                 url: "ajax.php",
@@ -107,9 +107,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
         },
+        // Desactivar el filtrado local de jQuery UI para que use solo el servidor
+        autoFocus: true,
         select: function (event, ui) {
             $("#id").val(ui.item.id);
-            $("#producto").val(ui.item.value);
+            $("#producto").val(ui.item.descripcion);
             $("#precio").val(formatearMoneda(parseFloat(ui.item.precio)));
             $("#cantidad").val(1); // Auto-completar con 1
             $("#cantidad").focus();
@@ -118,6 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Calcular el subtotal automáticamente
             const precio = parseFloat(ui.item.precio);
             $("#sub_total").val(formatearMoneda(precio));
+            return false; // Evitar que se llene con el value
         }
     })
 
@@ -142,16 +145,47 @@ document.addEventListener("DOMContentLoaded", function () {
             // Obtener el total con descuento
             var total_pagar = limpiarFormato($('#total_con_descuento').val());
             
-            // Validar que el monto pagado sea suficiente
-            if (monto_pagado > 0 && monto_pagado < total_pagar) {
+            // Validar que el total no sea 0
+            if (total_pagar <= 0) {
                 Swal.fire({
                     position: 'center',
-                    icon: 'warning',
-                    title: 'El monto pagado es menor al total',
-                    text: 'Total: ' + formatearMoneda(total_pagar) + ' - Pagado: ' + formatearMoneda(monto_pagado),
+                    icon: 'error',
+                    title: 'Total inválido',
+                    text: 'No se puede generar una venta con total $0',
                     showConfirmButton: true
                 });
                 return;
+            }
+            
+            // Validaciones específicas para efectivo
+            if (metodo_pago === 'efectivo') {
+                // Validar que se haya ingresado el monto pagado
+                if (!monto_pagado || monto_pagado <= 0) {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'warning',
+                        title: 'Datos de pago incompletos',
+                        text: 'Debe ingresar el monto pagado por el cliente',
+                        showConfirmButton: true
+                    });
+                    $('#monto_pagado').focus();
+                    return;
+                }
+                
+                // Validar que el monto pagado sea suficiente
+                if (monto_pagado < total_pagar) {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'warning',
+                        title: 'El monto pagado es menor al total',
+                        text: 'Total: ' + formatearMoneda(total_pagar) + ' - Pagado: ' + formatearMoneda(monto_pagado),
+                        showConfirmButton: true
+                    });
+                    return;
+                }
+            } else {
+                // Para otros métodos, el monto pagado es exacto al total
+                monto_pagado = total_pagar;
             }
             
             $.ajax({
@@ -168,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 success: function (response) {
 
                     const res = JSON.parse(response);
-                    if (response != 'error') {
+                    if (res.mensaje != 'error') {
                         Swal.fire({
                             position: 'center',
                             icon: 'success',
@@ -184,15 +218,19 @@ document.addEventListener("DOMContentLoaded", function () {
                             $('#monto_pagado').val('$');
                             $('#vuelto').val('$0');
                             $('#metodo_pago').val('efectivo');
-                            location.reload();
-                        }, 300);
+                            // Esperar un poco más antes de recargar para que el PDF se abra
+                            setTimeout(() => {
+                                location.reload();
+                            }, 500);
+                        }, 500);
                     } else {
                         Swal.fire({
                             position: 'center',
                             icon: 'error',
                             title: 'Error al generar la venta',
-                            showConfirmButton: false,
-                            timer: 2000
+                            text: res.detalle || 'Ocurrió un error inesperado',
+                            showConfirmButton: true,
+                            timer: 3000
                         })
                     }
                 },
@@ -210,6 +248,46 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         }
     });
+    
+    // Manejar cambio de método de pago
+    if (document.getElementById("metodo_pago")) {
+        $('#metodo_pago').on('change', function() {
+            const metodo = $(this).val();
+            
+            if (metodo === 'efectivo') {
+                // Habilitar campos para efectivo
+                $('#monto_pagado').prop('readonly', false).prop('required', true);
+                $('#vuelto').prop('readonly', true);
+                $('#monto_pagado').val('$');
+                $('#vuelto').val('$0');
+                $('#monto_pagado').closest('.form-group').find('label').html('<i class="fas fa-money-bill-wave"></i> Monto Pagado');
+            } else {
+                // Deshabilitar y auto-completar para otros métodos
+                $('#monto_pagado').prop('readonly', true).prop('required', false);
+                $('#vuelto').prop('readonly', true);
+                
+                // Auto-completar con el total exacto
+                const total = limpiarFormato($('#total_con_descuento').val());
+                $('#monto_pagado').val(formatearMoneda(total));
+                $('#vuelto').val('$0');
+                
+                $('#monto_pagado').closest('.form-group').find('label').html('<i class="fas fa-money-bill-wave"></i> Monto (Auto)');
+            }
+        });
+        
+        // También actualizar cuando cambia el total (si no es efectivo)
+        $('#descuento_global').on('input', function() {
+            const metodo = $('#metodo_pago').val();
+            if (metodo !== 'efectivo') {
+                setTimeout(() => {
+                    const total = limpiarFormato($('#total_con_descuento').val());
+                    $('#monto_pagado').val(formatearMoneda(total));
+                    $('#vuelto').val('$0');
+                }, 100);
+            }
+        });
+    }
+    
     if (document.getElementById("detalle_venta")) {
         listar();
     }
@@ -601,8 +679,20 @@ function calcularTotalConDescuento() {
     // Mostrar el total con descuento formateado
     $('#total_con_descuento').val(formatearMoneda(totalConDescuento));
     
-    // Recalcular el vuelto
-    calcularVuelto();
+    // Si el método de pago no es efectivo, auto-completar el monto pagado
+    if (document.getElementById('metodo_pago')) {
+        const metodo = $('#metodo_pago').val();
+        if (metodo !== 'efectivo') {
+            $('#monto_pagado').val(formatearMoneda(totalConDescuento));
+            $('#vuelto').val('$0');
+        } else {
+            // Recalcular el vuelto para efectivo
+            calcularVuelto();
+        }
+    } else {
+        // Recalcular el vuelto
+        calcularVuelto();
+    }
 }
 
 function generarPDF(cliente, id_venta) {
@@ -805,7 +895,6 @@ function editarProducto(id) {
             $('#precio').val(datos.precio);
             $('#cantidad').val(datos.cantidad);
             $('#stock_minimo').val(datos.stock_minimo || 5);
-            $('#embalaje').val(datos.embalaje);
             $('#id').val(datos.codproducto);
             $('#btnAccion').val('Modificar');
         },

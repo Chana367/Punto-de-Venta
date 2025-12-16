@@ -72,7 +72,7 @@ if (!empty($_SESSION['active'])) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($nombre_empresa); ?> - Iniciar Sesión</title>
-    <link rel="icon" href="assets/img/<?php echo htmlspecialchars($logo_sistema); ?>" type="image/png">
+    <link rel="icon" href="src/get_image.php?file=<?php echo urlencode($logo_sistema); ?>" type="image/png">
     <link rel="stylesheet" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/js/all.min.js">
     <style>
@@ -136,7 +136,7 @@ if (!empty($_SESSION['active'])) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('assets/img/<?php echo htmlspecialchars($background_sistema); ?>') no-repeat center center;
+            background: url('src/get_image.php?file=<?php echo urlencode($background_sistema); ?>') no-repeat center center;
             background-size: cover;
             z-index: -1;
             opacity: 0.6;
@@ -209,7 +209,7 @@ if (!empty($_SESSION['active'])) {
 </head>
 <body>
     <div class="brand-section">
-        <img src="assets/img/<?php echo htmlspecialchars($logo_sistema); ?>" alt="Logo <?php echo htmlspecialchars($nombre_empresa); ?>">
+        <img src="src/get_image.php?file=<?php echo urlencode($logo_sistema); ?>" alt="Logo <?php echo htmlspecialchars($nombre_empresa); ?>" onerror="this.style.display='none'">
         <h1><?php echo htmlspecialchars($nombre_empresa); ?></h1>
         <div class="info">
             <?php if (!empty($telefono_empresa)): ?>

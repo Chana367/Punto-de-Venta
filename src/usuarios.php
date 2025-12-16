@@ -161,8 +161,11 @@ include "includes/header.php";
                         <td><?php echo $data['correo']; ?></td>
                         <td><?php echo $data['usuario']; ?></td>
                         <td>
-                            <?php if ($data['idusuario'] != 1): ?>
-                                <a href="rol.php?id=<?php echo $data['idusuario']; ?>" class="btn btn-warning"><i class='fas fa-key'></i></a>
+                            <?php 
+                            // No permitir editar permisos del admin principal (ID=1) ni del usuario actual
+                            if ($data['idusuario'] != 1 && $data['idusuario'] != $id_user): 
+                            ?>
+                                <a href="rol.php?id=<?php echo $data['idusuario']; ?>" class="btn btn-warning" title="Editar permisos"><i class='fas fa-key'></i></a>
                             <?php endif; ?>
                             <?php if (puedeAccion('usuarios', 'actualizar')): ?>
                             <a href="#" onclick="editarUsuario(<?php echo $data['idusuario']; ?>)" class="btn btn-success"><i class='fas fa-edit'></i></a>

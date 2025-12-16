@@ -1,1 +1,30 @@
-node_modules 
+# Dependencias
+node_modules/
+
+# Base de datos (se genera automáticamente en la instalación)
+sistema.db
+sistema_backup_*.db
+
+# Logs y archivos de debug
+*.log
+npm-debug.log*
+log_post_debug.txt
+log_permisos*.txt
+
+# Archivos temporales
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+output/
+

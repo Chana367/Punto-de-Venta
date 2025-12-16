@@ -59,11 +59,25 @@ if ($_POST) {
                             </button>
                         </div>';
             } else {
-                $logoFilename = 'logo.' . $ext;
-                $upload_path = "../assets/img/" . $logoFilename;
+                // Usar APPDATA para evitar problemas de permisos
+                $appDataDir = getenv('APPDATA') . '\\PuntoVenta\\imagenes';
+                if (!is_dir($appDataDir)) {
+                    mkdir($appDataDir, 0777, true);
+                }
+                
+                $newLogoFilename = 'logo.' . $ext;
+                $upload_path = $appDataDir . '\\' . $newLogoFilename;
                 if (move_uploaded_file($_FILES['logo']['tmp_name'], $upload_path)) {
+                    $logoFilename = $newLogoFilename; // Actualizar solo si se subió exitosamente
                     $alert = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                                 Logo actualizado correctamente
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>';
+                } else {
+                    $alert = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                Error al subir el logo. Verifique los permisos.
                                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
@@ -93,9 +107,16 @@ if ($_POST) {
                             </button>
                         </div>';
             } else {
-                $backgroundFilename = 'background.' . $ext;
-                $upload_path = "../assets/img/" . $backgroundFilename;
+                // Usar APPDATA para evitar problemas de permisos
+                $appDataDir = getenv('APPDATA') . '\\PuntoVenta\\imagenes';
+                if (!is_dir($appDataDir)) {
+                    mkdir($appDataDir, 0777, true);
+                }
+                
+                $newBackgroundFilename = 'background.' . $ext;
+                $upload_path = $appDataDir . '\\' . $newBackgroundFilename;
                 if (move_uploaded_file($_FILES['background']['tmp_name'], $upload_path)) {
+                    $backgroundFilename = $newBackgroundFilename; // Actualizar solo si se subió exitosamente
                     if (empty($alert)) {
                         $alert = '<div class="alert alert-success alert-dismissible fade show" role="alert">
                                     Background actualizado correctamente
@@ -173,10 +194,18 @@ include_once "includes/header.php";
                         <label>Logo de la Empresa:</label>
                         <div class="mb-3">
                             <?php 
-                            $logoPath = '../assets/img/' . ($data['logo'] ?? 'logo.png');
-                            if (file_exists($logoPath)): 
+                            // Buscar logo en APPDATA primero, luego en assets
+                            $appDataDir = getenv('APPDATA') . '\\PuntoVenta\\imagenes';
+                            $logoFilename = $data['logo'] ?? 'logo.png';
+                            $logoAppData = $appDataDir . '\\' . $logoFilename;
+                            $logoAssets = '../assets/img/' . $logoFilename;
+                            
+                            $logoExists = file_exists($logoAppData) || file_exists($logoAssets);
+                            
+                            if ($logoExists): 
                             ?>
-                                <img src="<?php echo $logoPath; ?>?<?php echo time(); ?>" alt="Logo actual" class="img-thumbnail mb-2" style="max-width: 200px; display: block;">
+                                <img src="get_image.php?file=<?php echo urlencode($logoFilename); ?>&t=<?php echo time(); ?>" alt="Logo actual" class="img-thumbnail mb-2" style="max-width: 200px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <p class="text-muted" style="display:none;">No se pudo cargar el logo.</p>
                                 <small class="text-info d-block mb-2">
                                     <i class="fas fa-info-circle"></i> Logo actual. Si selecciona uno nuevo, será reemplazado.
                                 </small>
@@ -200,10 +229,17 @@ include_once "includes/header.php";
                         <label>Imagen de Fondo (Background):</label>
                         <div class="mb-3">
                             <?php 
-                            $bgPath = '../assets/img/' . ($data['background'] ?? 'sidebar-1.jpg');
-                            if (file_exists($bgPath)): 
+                            // Buscar background en APPDATA primero, luego en assets
+                            $bgFilename = $data['background'] ?? 'sidebar-1.jpg';
+                            $bgAppData = $appDataDir . '\\' . $bgFilename;
+                            $bgAssets = '../assets/img/' . $bgFilename;
+                            
+                            $bgExists = file_exists($bgAppData) || file_exists($bgAssets);
+                            
+                            if ($bgExists): 
                             ?>
-                                <img src="<?php echo $bgPath; ?>?<?php echo time(); ?>" alt="Background actual" class="img-thumbnail mb-2" style="max-width: 200px; display: block;">
+                                <img src="get_image.php?file=<?php echo urlencode($bgFilename); ?>&t=<?php echo time(); ?>" alt="Background actual" class="img-thumbnail mb-2" style="max-width: 200px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <p class="text-muted" style="display:none;">No se pudo cargar el background.</p>
                                 <small class="text-info d-block mb-2">
                                     <i class="fas fa-info-circle"></i> Background actual para menú lateral y login.
                                 </small>

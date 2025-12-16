@@ -25,8 +25,8 @@ if (isset($_GET['q'])) {
     $datos = array();
     $nombre = $_GET['pro'];
 
-    // Consulta para buscar productos por código o descripción
-    $producto = $conexion->prepare("SELECT * FROM producto WHERE codigo LIKE :nombre OR descripcion LIKE :nombre");
+    // Consulta para buscar productos por código o descripción (solo activos)
+    $producto = $conexion->prepare("SELECT * FROM producto WHERE (codigo LIKE :nombre OR descripcion LIKE :nombre) AND activo = 1");
     $nombre = "%" . $nombre . "%";
     $producto->bindParam(':nombre', $nombre, PDO::PARAM_STR);
     $producto->execute();
@@ -34,7 +34,9 @@ if (isset($_GET['q'])) {
     while ($row = $producto->fetch(PDO::FETCH_ASSOC)) {
         $data['id'] = $row['codproducto'];
         $data['label'] = $row['codigo'] . ' - ' . $row['descripcion'];
-        $data['value'] = $row['descripcion'];
+        $data['value'] = $row['codigo'] . ' - ' . $row['descripcion'];
+        $data['codigo'] = $row['codigo'];
+        $data['descripcion'] = $row['descripcion'];
         $data['precio'] = $row['precio'];
         $data['cantidad'] = $row['cantidad'];
         array_push($datos, $data);
@@ -78,12 +80,26 @@ if (isset($_GET['q'])) {
     $turno = isset($_GET['turno']) ? $_GET['turno'] : '';
     $descuento_global = isset($_GET['descuento_global']) ? floatval($_GET['descuento_global']) : 0;
 
-    // Consulta para obtener el total sin descuento
-    $consulta = $conexion->prepare("SELECT SUM(total) AS total_pagar FROM detalle_temp WHERE id_usuario = :id_user");
-    $consulta->bindParam(':id_user', $id_user, PDO::PARAM_INT);
-    $consulta->execute();
-    $result = $consulta->fetch(PDO::FETCH_ASSOC);
-    $total_sin_descuento = $result['total_pagar'];
+    // Validar que existan productos en el carrito
+    $checkDetalle = $conexion->prepare("SELECT COUNT(*) as count, COALESCE(SUM(total), 0) AS total_pagar FROM detalle_temp WHERE id_usuario = :id_user");
+    $checkDetalle->bindParam(':id_user', $id_user, PDO::PARAM_INT);
+    $checkDetalle->execute();
+    $result = $checkDetalle->fetch(PDO::FETCH_ASSOC);
+    $detalleCount = intval($result['count']);
+    $total_sin_descuento = floatval($result['total_pagar']);
+    
+    // Validar que hay productos y el total no sea 0
+    if ($detalleCount == 0) {
+        $msg = array('mensaje' => 'error', 'detalle' => 'No hay productos en el carrito');
+        echo json_encode($msg);
+        die();
+    }
+    
+    if ($total_sin_descuento <= 0) {
+        $msg = array('mensaje' => 'error', 'detalle' => 'El total de la venta debe ser mayor a $0');
+        echo json_encode($msg);
+        die();
+    }
     
     // Aplicar descuento global
     $total = $total_sin_descuento * (1 - $descuento_global / 100);
@@ -94,8 +110,8 @@ if (isset($_GET['q'])) {
         $vuelto = 0; // Si el monto pagado es menor al total, no hay vuelto
     }
 
-    // Insertar venta con los nuevos campos
-    $insertar = $conexion->prepare("INSERT INTO ventas (id_cliente, total, id_usuario, metodo_pago, monto_pagado, vuelto, turno) VALUES (:id_cliente, :total, :id_user, :metodo_pago, :monto_pagado, :vuelto, :turno)");
+    // Insertar venta con los nuevos campos incluyendo descuento_global
+    $insertar = $conexion->prepare("INSERT INTO ventas (id_cliente, total, id_usuario, metodo_pago, monto_pagado, vuelto, turno, descuento_global) VALUES (:id_cliente, :total, :id_user, :metodo_pago, :monto_pagado, :vuelto, :turno, :descuento)");
     $insertar->bindParam(':id_cliente', $id_cliente, PDO::PARAM_INT);
     $insertar->bindParam(':total', $total, PDO::PARAM_STR);
     $insertar->bindParam(':id_user', $id_user, PDO::PARAM_INT);
@@ -103,6 +119,7 @@ if (isset($_GET['q'])) {
     $insertar->bindParam(':monto_pagado', $monto_pagado, PDO::PARAM_STR);
     $insertar->bindParam(':vuelto', $vuelto, PDO::PARAM_STR);
     $insertar->bindParam(':turno', $turno, PDO::PARAM_STR);
+    $insertar->bindParam(':descuento', $descuento_global, PDO::PARAM_STR);
     $insertar->execute();
 
     if ($insertar) {
@@ -119,9 +136,9 @@ if (isset($_GET['q'])) {
         while ($row = $consultaDetalle->fetch(PDO::FETCH_ASSOC)) {
             $id_producto = $row['id_producto'];
             $cantidad = $row['cantidad'];
-            $desc = $row['descuento'];
             $precio = $row['precio_venta'];
-            $total = $row['total'];
+            $total_item = $row['total'];
+            $desc = 0; // detalle_temp no tiene columna descuento individual
 
             // Insertar detalle de venta
             $insertarDet = $conexion->prepare("INSERT INTO detalle_venta (id_producto, id_venta, cantidad, precio, descuento, total) VALUES (:id_producto, :id_venta, :cantidad, :precio, :descuento, :total)");
@@ -130,7 +147,7 @@ if (isset($_GET['q'])) {
             $insertarDet->bindParam(':cantidad', $cantidad, PDO::PARAM_INT);
             $insertarDet->bindParam(':precio', $precio, PDO::PARAM_STR);
             $insertarDet->bindParam(':descuento', $desc, PDO::PARAM_STR);
-            $insertarDet->bindParam(':total', $total, PDO::PARAM_STR);
+            $insertarDet->bindParam(':total', $total_item, PDO::PARAM_STR);
             $insertarDet->execute();
 
             // Actualizar stock del producto
@@ -244,9 +261,18 @@ if (isset($_POST['regDetalle'])) {
                 $query->bindParam(':cant', $cant, PDO::PARAM_INT);
                 $query->bindParam(':precio', $precio, PDO::PARAM_STR);
                 $query->bindParam(':total', $total, PDO::PARAM_STR);
-                $query->execute();
-
-                $msg = $query ? "registrado" : "Error al ingresar";
+                
+                try {
+                    $resultado = $query->execute();
+                    if ($resultado) {
+                        $msg = "registrado";
+                    } else {
+                        $error = $query->errorInfo();
+                        $msg = "Error al insertar: " . $error[2];
+                    }
+                } catch (Exception $e) {
+                    $msg = "Excepción al insertar: " . $e->getMessage();
+                }
             }
         }
     }
